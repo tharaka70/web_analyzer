@@ -1,0 +1,12 @@
+*.dll
+*.so
+*.dylib
+
+# Test binary, build artifacts
+*.test
+_obj/
+_test/
+*.[oa]
+
+# Output of go build
+web_analyzer
