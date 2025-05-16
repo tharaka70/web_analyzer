@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analysis Results for {{ .URL }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Analysis Results for: <a href="{{ .URL }}" target="_blank">{{ .URL }}</a></h1>
+
+    {{ if .Analysis }}
+        <h2>Key Information</h2>
+        <ul>
+            <li><strong>HTML Version:</strong> {{ .Analysis.HTMLVersion | html }}</li>
+            <li><strong>Page Title:</strong> {{ .Analysis.PageTitle | html }}</li>
+            <li><strong>Contains Login Form:</strong> {{ if .Analysis.ContainsLoginForm }}Yes{{ else }}No{{ end }}</li>
+        </ul>
+
+        <h2>Headings</h2>
+        {{ if .Analysis.HeadingsCount }}
+            <ul>
+                {{ range $level, $count := .Analysis.HeadingsCount }}
+                    <li><strong>{{ $level | html }}:</strong> {{ $count }}</li>
+                {{ end }}
+            </ul>
+        {{ else }}
+            <p>No headings found.</p>
+        {{ end }}
+
+        <h2>Links</h2>
+        <ul>
+            <li><strong>Internal Links:</strong> {{ .Analysis.InternalLinksCount }}</li>
+            <li><strong>External Links:</strong> {{ .Analysis.ExternalLinksCount }}</li>
+            <li><strong>Total Inaccessible Links:</strong> {{ len .Analysis.InaccessibleLinks }}</li>
+        </ul>
+
+        {{ if .Analysis.InaccessibleLinks }}
+            <h3>Inaccessible Link Details:</h3>
+            <ul>
+                {{ range .Analysis.InaccessibleLinks }}
+                    <li>
+                        URL: <a href="{{ .URL }}" target="_blank">{{ .URL | html }}</a>
+                        {{ if .StatusCode }}(Status: {{ .StatusCode }}){{ end }}
+                        - Error: {{ .Error | html }}
+                    </li>
+                {{ end }}
+            </ul>
+        {{ end }}
+
+    {{ else if .Error }}
+        <div class="error">
+            <h2>Error Analyzing URL</h2>
+            <p>{{ .Error | html }}</p>
+            {{ if .StatusCode }}
+                <p>HTTP Status Code: {{ .StatusCode }}</p>
+            {{ end }}
+        </div>
+    {{ end }}
+
+    <p><a href="/">Analyze another page</a></p>
+</body>
+</html>
