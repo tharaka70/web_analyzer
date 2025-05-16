@@ -3,19 +3,26 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log" // You can upgrade this to "log/slog" later as planned
+	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/tharaka70/web_analyzer/internal/analyzer"
 )
+
+var logger *slog.Logger // Global logger instance
 
 // Global template variable
 var tmpl *template.Template
 
 // init function to parse templates on program startup
 func init() {
+	// Initialize templates
 	tmpl = template.Must(template.ParseGlob("templates/*.html"))
+
+	// Initialize structured logger
+	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 }
 
 // This struct holds all data passed to HTML templates
@@ -38,7 +45,7 @@ func analyzeHandler(w http.ResponseWriter, r *http.Request) {
 		data := PageData{Error: "URL field cannot be empty."}
 		templateErr := tmpl.ExecuteTemplate(w, "index.html", data)
 		if templateErr != nil {
-			log.Printf("Error rendering template for empty URL: %v", templateErr)
+			logger.Error("Error rendering template for empty URL:", "error", templateErr)
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 		return
@@ -50,7 +57,7 @@ func analyzeHandler(w http.ResponseWriter, r *http.Request) {
 		data := PageData{Error: fmt.Sprintf("Invalid URL: %q. Must be a valid HTTP/HTTPS URL.", submittedURL)}
 		templateErr := tmpl.ExecuteTemplate(w, "index.html", data)
 		if templateErr != nil {
-			log.Printf("Error rendering template for invalid URL: %v", templateErr)
+			logger.Error("Error rendering template for invalid URL:", "error", templateErr)
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 		return
@@ -59,19 +66,19 @@ func analyzeHandler(w http.ResponseWriter, r *http.Request) {
 		data := PageData{Error: fmt.Sprintf("Invalid URL: %q. URL must include a host (e.g., example.com).", submittedURL)}
 		templateErr := tmpl.ExecuteTemplate(w, "index.html", data)
 		if templateErr != nil {
-			log.Printf("Error rendering template for URL without host: %v", templateErr)
+			logger.Error("Error rendering template for URL without host", "error", templateErr)
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	log.Printf("Attempting to analyze URL: %s", parsedURL.String())
+	logger.Info("Attempting to analyze URL", "URL", parsedURL.String())
 
 	// Perform the analysis by calling the function from the analyzer package
 	analysisResult, analysisErr := analyzer.FetchAndAnalyze(parsedURL.String())
 
 	if analysisErr != nil {
-		log.Printf("Error analyzing URL %s: %v", parsedURL.String(), analysisErr)
+		logger.Error("Error analyzing URL %s: %v", parsedURL.String(), analysisErr)
 		pageData := PageData{
 			URL:   submittedURL, // Show the originally submitted URL
 			Error: analysisErr.Error(),
@@ -83,21 +90,21 @@ func analyzeHandler(w http.ResponseWriter, r *http.Request) {
 
 		templateErr := tmpl.ExecuteTemplate(w, "index.html", pageData) // Show error on the index page
 		if templateErr != nil {
-			log.Printf("Error rendering template for analysis error: %v", templateErr)
+			logger.Error("Error rendering template for analysis error:", "error", templateErr)
 			http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		}
 		return
 	}
 
 	// If analysis is successful, prepare data for the results page
-	log.Printf("Successfully analyzed URL: %s", parsedURL.String())
+	logger.Info("Successfully analyzed URL", "URL", parsedURL.String())
 	pageData := PageData{
 		URL:      submittedURL, // Show the originally submitted URL
 		Analysis: analysisResult,
 	}
 	templateErr := tmpl.ExecuteTemplate(w, "results.html", pageData)
 	if templateErr != nil {
-		log.Printf("Error rendering results template: %v", templateErr)
+		logger.Error("Error rendering results template:", "error", templateErr)
 		http.Error(w, "Error rendering page", http.StatusInternalServerError)
 	}
 }
@@ -112,7 +119,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	// Execute the index.html template without any specific data
 	err := tmpl.ExecuteTemplate(w, "index.html", nil)
 	if err != nil {
-		log.Printf("Error rendering index template: %v", err)
+		logger.Error("Error rendering index template", "err", err)
 		http.Error(w, "Error rendering page", http.StatusInternalServerError)
 	}
 }
@@ -128,10 +135,10 @@ func main() {
 	http.HandleFunc("/analyze", analyzeHandler)
 
 	port := "8080"
-	log.Printf("Server starting and listening on http://localhost:%s", port)
+	logger.Info("Server starting and listening on http://localhost:", "port", port)
 
 	// Start the HTTP server
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Could not start server: %s\n", err.Error())
+		logger.Error("Could not start server:", "error", err.Error())
 	}
 }
