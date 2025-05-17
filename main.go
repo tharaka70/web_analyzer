@@ -23,6 +23,7 @@ func init() {
 
 	// Initialize structured logger
 	logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 }
 
 // This struct holds all data passed to HTML templates
