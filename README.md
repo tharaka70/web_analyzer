@@ -12,6 +12,18 @@ This web application analyzes a given web page URL and provides insights into it
 
 The application handles errors for unreachable URLs, displaying HTTP status codes and descriptions.
 
+## Screenshots
+
+Here is the main form:
+
+![Application Form](./images/url_form.png)
+
+And here are some sample results:
+
+![Results Analysis top](./images/result1.png)
+
+![Results Analysis bottom](./images/result2.png)
+
 ## Prerequisites
 
 - Go (version 1.21 or higher recommended for `slog`, a Go version compatible with `golang.org/x/net/html`)
