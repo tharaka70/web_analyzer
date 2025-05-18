@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	// "sync" // Not directly used in test setup, but analyzer uses it
 	"testing"
 	"time"
 
@@ -17,13 +16,9 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// TestMain can be used to set up global test state, like a default logger for tests.
+// starting point for the test suite
 func TestMain(m *testing.M) {
-	// Set a default null logger for tests to avoid noisy output,
-	// unless a specific test needs to check log output.
-	// Use os.Stdout if you want to see logs during tests.
-	// h := slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug})
-	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: true}) // AddSource can be helpful
+	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: true})
 	slog.SetDefault(slog.New(h))
 
 	os.Exit(m.Run())
