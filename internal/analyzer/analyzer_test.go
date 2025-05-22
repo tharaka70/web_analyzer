@@ -121,7 +121,6 @@ func TestFetchAndAnalyze_Full(t *testing.T) {
 		for _, url := range result.InaccessibleLinks {
 			if strings.Contains(url, "definitely-broken-link") {
 				foundBroken = true
-				// Since we no longer track status codes and error details, we can only verify the URL
 				break
 			}
 		}
@@ -295,8 +294,6 @@ func TestCheckLinkAccessibility(t *testing.T) {
 	for _, url := range inaccessibleLinks {
 		if _, ok := expectedInaccessible[url]; ok {
 			foundInaccessibleCount++
-			// Since we no longer track status codes and error messages,
-			// we can only verify that the expected URLs are in the list
 		} else {
 			t.Errorf("Unexpected link in inaccessible list: %s", url)
 		}

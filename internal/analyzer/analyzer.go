@@ -366,7 +366,7 @@ func checkLinkAccessibility(links []string) []string {
 				reqGet.Header.Set("User-Agent", "WebAnalyzerBot/1.0 (+http://example.com/bot)")
 				respGet, errGet := httpClient.Do(reqGet)
 				if errGet != nil {
-					mu.Lock()
+					mu.Lock() // Lock to prevent concurrent access to inaccessible slice from go routines
 					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 					return
