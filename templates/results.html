@@ -34,19 +34,6 @@
             <li><strong>Total Inaccessible Links:</strong> {{ len .Analysis.InaccessibleLinks }}</li>
         </ul>
 
-        {{ if .Analysis.InaccessibleLinks }}
-            <h3>Inaccessible Link Details:</h3>
-            <ul>
-                {{ range .Analysis.InaccessibleLinks }}
-                    <li>
-                        URL: <a href="{{ .URL }}" target="_blank">{{ .URL | html }}</a>
-                        {{ if .StatusCode }}(Status: {{ .StatusCode }}){{ end }}
-                        - Error: {{ .Error | html }}
-                    </li>
-                {{ end }}
-            </ul>
-        {{ end }}
-
     {{ else if .Error }}
         <div class="error">
             <h2>Error Analyzing URL</h2>

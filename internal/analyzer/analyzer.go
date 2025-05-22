@@ -20,14 +20,8 @@ type AnalysisResult struct {
 	HeadingsCount      map[string]int // Map with header value and count {"h1": 2, "h2": 5}
 	InternalLinksCount int
 	ExternalLinksCount int
-	InaccessibleLinks  []InaccessibleLinkInfo
+	InaccessibleLinks  []string // Just store URLs of inaccessible links without error details
 	ContainsLoginForm  bool
-}
-
-type InaccessibleLinkInfo struct {
-	URL        string
-	StatusCode int // 0 if DNS error or other non-HTTP error
-	Error      string
 }
 
 // Custom error type to include status code
@@ -322,8 +316,8 @@ func detectLoginForm(formNode *html.Node) bool {
 }
 
 // checkLinkAccessibility checks a list of URLs concurrently
-func checkLinkAccessibility(links []string) []InaccessibleLinkInfo {
-	var inaccessible []InaccessibleLinkInfo
+func checkLinkAccessibility(links []string) []string {
+	var inaccessible []string
 	if len(links) == 0 {
 		return inaccessible
 	}
@@ -350,7 +344,7 @@ func checkLinkAccessibility(links []string) []InaccessibleLinkInfo {
 			req, err := http.NewRequest(http.MethodHead, l, nil)
 			if err != nil {
 				mu.Lock()
-				inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, Error: "Failed to create request: " + err.Error()})
+				inaccessible = append(inaccessible, l)
 				mu.Unlock()
 				return
 			}
@@ -362,7 +356,7 @@ func checkLinkAccessibility(links []string) []InaccessibleLinkInfo {
 				if urlErr, ok := err.(*url.Error); ok {
 					if strings.Contains(strings.ToLower(urlErr.Error()), "timeout") || strings.Contains(strings.ToLower(urlErr.Error()), "refused") {
 						mu.Lock()
-						inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: 0, Error: urlErr.Error()})
+						inaccessible = append(inaccessible, l)
 						mu.Unlock()
 						return
 					}
@@ -371,28 +365,22 @@ func checkLinkAccessibility(links []string) []InaccessibleLinkInfo {
 				reqGet, errGet := http.NewRequest(http.MethodGet, l, nil)
 				if errGet != nil {
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, Error: "Failed to create GET request: " + errGet.Error()})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 					return
 				}
 				reqGet.Header.Set("User-Agent", "WebAnalyzerBot/1.0 (+http://example.com/bot)")
 				respGet, errGet := httpClient.Do(reqGet)
 				if errGet != nil {
-					if urlErr, ok := errGet.(*url.Error); ok {
-						mu.Lock()
-						inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: 0, Error: urlErr.Error()})
-						mu.Unlock()
-						return
-					}
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, Error: errGet.Error()})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 					return
 				}
 				defer respGet.Body.Close()
 				if respGet.StatusCode >= 400 {
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: respGet.StatusCode, Error: respGet.Status})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 				}
 				return
@@ -404,35 +392,29 @@ func checkLinkAccessibility(links []string) []InaccessibleLinkInfo {
 				reqGet, errGet := http.NewRequest(http.MethodGet, l, nil)
 				if errGet != nil {
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, Error: "Failed to create GET request: " + errGet.Error()})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 					return
 				}
 				reqGet.Header.Set("User-Agent", "WebAnalyzerBot/1.0 (+http://example.com/bot)")
 				respGet, errGet := httpClient.Do(reqGet)
 				if errGet != nil {
-					if urlErr, ok := errGet.(*url.Error); ok {
-						mu.Lock()
-						inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: 0, Error: urlErr.Error()})
-						mu.Unlock()
-						return
-					}
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, Error: errGet.Error()})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 					return
 				}
 				defer respGet.Body.Close()
 				if respGet.StatusCode >= 400 {
 					mu.Lock()
-					inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: respGet.StatusCode, Error: respGet.Status})
+					inaccessible = append(inaccessible, l)
 					mu.Unlock()
 				}
 				return
 			}
 			if statusCode >= 400 {
 				mu.Lock()
-				inaccessible = append(inaccessible, InaccessibleLinkInfo{URL: l, StatusCode: statusCode, Error: resp.Status})
+				inaccessible = append(inaccessible, l)
 				mu.Unlock()
 			}
 		}(link)

@@ -118,12 +118,10 @@ func TestFetchAndAnalyze_Full(t *testing.T) {
 		t.Errorf("Expected 1 inaccessible link, got %d. Links: %+v", len(result.InaccessibleLinks), result.InaccessibleLinks)
 	} else {
 		foundBroken := false
-		for _, l := range result.InaccessibleLinks {
-			if strings.Contains(l.URL, "definitely-broken-link") {
+		for _, url := range result.InaccessibleLinks {
+			if strings.Contains(url, "definitely-broken-link") {
 				foundBroken = true
-				if l.StatusCode != 0 || (!strings.Contains(l.Error, "connect: connection refused") && !strings.Contains(l.Error, "No connection could be made")) {
-					t.Logf("Warning: Inaccessible link error for 'definitely-broken-link' was not as expected. URL: %s, Status: %d, Error: %s", l.URL, l.StatusCode, l.Error)
-				}
+				// Since we no longer track status codes and error details, we can only verify the URL
 				break
 			}
 		}
@@ -294,22 +292,13 @@ func TestCheckLinkAccessibility(t *testing.T) {
 	}
 	foundInaccessibleCount := 0
 
-	for _, l := range inaccessibleLinks {
-		if _, ok := expectedInaccessible[l.URL]; ok {
+	for _, url := range inaccessibleLinks {
+		if _, ok := expectedInaccessible[url]; ok {
 			foundInaccessibleCount++
-			if strings.Contains(l.URL, "/bad") && l.StatusCode != http.StatusNotFound {
-				t.Errorf("Expected status code %d for /bad link, got %d", http.StatusNotFound, l.StatusCode)
-			}
-			if strings.Contains(l.URL, "/unreachable") && l.StatusCode != 0 { // Network error
-				t.Errorf("Expected status code 0 for /unreachable link, got %d. Error: %s", l.StatusCode, l.Error)
-			}
-			if strings.Contains(l.URL, "/timeout") && l.StatusCode != 0 { // Timeout error
-				if !strings.Contains(strings.ToLower(l.Error), "timeout") && !strings.Contains(strings.ToLower(l.Error), "deadline exceeded") {
-					t.Errorf("Expected timeout error for /timeout link, got Error: %s", l.Error)
-				}
-			}
+			// Since we no longer track status codes and error messages,
+			// we can only verify that the expected URLs are in the list
 		} else {
-			t.Errorf("Unexpected link in inaccessible list: %+v", l)
+			t.Errorf("Unexpected link in inaccessible list: %s", url)
 		}
 	}
 	if foundInaccessibleCount != len(expectedInaccessible) {
