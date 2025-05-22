@@ -20,7 +20,7 @@ type AnalysisResult struct {
 	HeadingsCount      map[string]int // Map with header value and count {"h1": 2, "h2": 5}
 	InternalLinksCount int
 	ExternalLinksCount int
-	InaccessibleLinks  []string // Just store URLs of inaccessible links without error details
+	InaccessibleLinks  []string // store URLs of inaccessible links
 	ContainsLoginForm  bool
 }
 
@@ -105,21 +105,15 @@ func FetchAndAnalyze(pageURL string) (*AnalysisResult, error) {
 			// --- 3. Links Count (Anchor tags and Link tags) ---
 			if n.DataAtom == atom.A || n.DataAtom == atom.Link {
 				var hrefAttr string
-				// isLinkTagWithStylesheetRel := false
 
 				for _, attr := range n.Attr {
 					if attr.Key == "href" {
 						hrefAttr = strings.TrimSpace(attr.Val)
 					}
-					// if n.DataAtom == atom.Link && attr.Key == "rel" && strings.ToLower(attr.Val) == "stylesheet" {
-					// 	isLinkTagWithStylesheetRel = true
-					// }
 				}
 
 				// Only process <link> tags if they are stylesheets (or other link types you want to count)
-				// For now, we count all <link href="..."> as links if they have an href.
-				// You might want to be more specific, e.g. only `rel="stylesheet"`, `rel="icon"`, etc.
-				// For this assignment, counting all <link href> and <a href> seems reasonable.
+				// For now, count all <link href="..."> as links if they have an href.
 				if hrefAttr != "" {
 					if hrefAttr == "" || strings.HasPrefix(hrefAttr, "#") ||
 						strings.HasPrefix(strings.ToLower(hrefAttr), "javascript:") ||
